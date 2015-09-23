@@ -1,0 +1,92 @@
+<?php
+/** 
+ * This function defines the URL to the page created etc.
+ * See http://api.drupal.org/api/function/hook_menu/7
+ */
+function siteinformation_menu() {
+  $items = array();
+ $items['admin/config/system/site-information2'] = array(
+    'title' => 'On this date module settings',
+    'description' => 'Description of your On this date settings page',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('siteinformation_my_form'),
+    'access arguments' => array('administer api key settings'),
+    'type' => MENU_NORMAL_ITEM,
+	'weight' => 0,
+   );
+
+   $items['admin/config/system/site-information'] = array(
+    'title' => 'Change API key setting',
+    'description' => 'Description of your On this date settings page',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('siteinformation_my_form'),
+    'access arguments' => array('administer api key settings'),
+	'access arguments' => array('administer site configuration'),
+   	'weight' => -100,
+   );
+   
+    $items['pagejson/%/%'] = array(
+    'page callback' => 'json_page',
+   	'access callback' =>'pagejson_access',
+   );
+   
+    $items['hello'] = array(
+    'page callback' => 'hello_page',
+     
+   );
+  return $items;
+}
+/*** check the access of page by matching stored key of json ***/
+function pagejson_access(){
+	$jsonkey = variable_get('apikey',"no api key");
+	if(arg(1) == $jsonkey){
+		return TRUE;
+	}else{
+		return FALSE;
+	}
+}
+
+ /*** convert node content to json */
+function json_page(){
+	$nid = arg(2);
+	$node = node_load($nid);
+	echo json_encode($node);
+}
+/**
+ * This function gets called in the browser address bar for: 
+ * "http://yourhost/my_module/form" or 
+ * "http://yourhost/?q=my_module/form". It will generate
+ * a page with this form on it.
+ * This function is called the "form builder". It builds the form.
+ */
+function siteinformation_my_form($form, &$form_state) {
+    
+    // This is the first form element. It's a textfield with a label, "Name"
+  $form['apikey'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site API Key'),
+    '#default_value' => variable_get('apikey', "No API Key yet"),
+    '#size' => 15,
+    '#maxlength' => 15,
+    '#description' => t("Site API Key for JSon output"),
+    '#required' => TRUE,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => variable_get('submitbuttontext',"Submit"),
+  );
+  return $form;
+}
+
+function siteinformation_my_form_validate($form, &$form_state) {
+	$keydisaplay = $form_state['values']['apikey'];
+	if ($keydisaplay == "") {
+		form_set_error('apikey', t('You must enter an alphanumeric key.'));
+	}
+}
+
+function siteinformation_my_form_submit($form, &$form_state){
+$apikey = variable_set('apikey', ($form_state['values']['apikey']));
+variable_set('submitbuttontext', "Update");
+drupal_set_message(t('The configuration options have been saved'));
+}
